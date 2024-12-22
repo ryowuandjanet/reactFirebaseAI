@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../contexts/AuthContext';
 import {
@@ -9,7 +9,11 @@ import {
   Box,
   Modal,
   Typography,
-  IconButton
+  IconButton,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 
@@ -25,46 +29,64 @@ const style = {
   borderRadius: 2,
 };
 
-export default function NoteForm({ open, handleClose, editNote = null }) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+const companies = [
+  '揚富開發公司',
+  '鉅鈦開發公司'
+];
+
+export default function NoteForm({ open, handleClose, editCase = null }) {
+  const [caseNumber, setCaseNumber] = useState('');
+  const [caseCompany, setCaseCompany] = useState('');
   const { currentUser } = useAuth();
 
   useEffect(() => {
-    if (editNote) {
-      setTitle(editNote.title);
-      setContent(editNote.content);
+    if (editCase) {
+      setCaseNumber(editCase.caseNumber);
+      setCaseCompany(editCase.caseCompany);
     } else {
-      setTitle('');
-      setContent('');
+      setCaseNumber('');
+      setCaseCompany('');
     }
-  }, [editNote]);
+  }, [editCase]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !content.trim()) return;
-
+    if (!caseNumber.trim() || !caseCompany) return;
+  
     try {
-      if (editNote) {
-        // 更新現有筆記
-        await updateDoc(
-          doc(db, `users/${currentUser.uid}/notes/${editNote.id}`),
-          {
-            title,
-            content,
-          }
-        );
+      if (editCase) {
+        const userCaseRef = doc(db, `users/${currentUser.uid}/cases/${editCase.id}`);
+        const globalCaseRef = doc(db, 'Case', editCase.id);
+        
+        await Promise.all([
+          updateDoc(userCaseRef, {
+            caseNumber,
+            caseCompany,
+          }),
+          updateDoc(globalCaseRef, {
+            caseNumber: caseNumber,
+            caseCompany: caseCompany,
+          })
+        ]);
       } else {
-        // 新增筆記
-        await addDoc(collection(db, `users/${currentUser.uid}/notes`), {
-          title,
-          content,
+        const casesRef = collection(db, `users/${currentUser.uid}/cases`);
+        const newCaseDoc = await addDoc(casesRef, {
+          caseNumber,
+          caseCompany,
+          createdAt: new Date().toISOString(),
+          userId: currentUser.uid
+        });
+  
+        await setDoc(doc(db, 'Case', newCaseDoc.id), {
+          caseNumber: caseNumber,
+          caseCompany: caseCompany,
           createdAt: new Date().toISOString(),
           userId: currentUser.uid
         });
       }
-      setTitle('');
-      setContent('');
+      
+      setCaseNumber('');
+      setCaseCompany('');
       handleClose();
     } catch (error) {
       console.error('操作失敗:', error);
@@ -72,15 +94,11 @@ export default function NoteForm({ open, handleClose, editNote = null }) {
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="modal-title"
-    >
+    <Modal open={open} onClose={handleClose} aria-labelledby="modal-title">
       <Box sx={style}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
           <Typography id="modal-title" variant="h6">
-            {editNote ? '編輯筆記' : '新增筆記'}
+            {editCase ? '編輯案件' : '新增案件'}
           </Typography>
           <IconButton onClick={handleClose}>
             <CloseIcon />
@@ -89,22 +107,27 @@ export default function NoteForm({ open, handleClose, editNote = null }) {
         <Box component="form" onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label="標題"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            label="案號"
+            value={caseNumber}
+            onChange={(e) => setCaseNumber(e.target.value)}
             margin="normal"
             required
           />
-          <TextField
-            fullWidth
-            label="內容"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            margin="normal"
-            multiline
-            rows={4}
-            required
-          />
+          <FormControl fullWidth margin="normal" required>
+            <InputLabel id="company-select-label">所屬公司</InputLabel>
+            <Select
+              labelId="company-select-label"
+              value={caseCompany}
+              label="所屬公司"
+              onChange={(e) => setCaseCompany(e.target.value)}
+            >
+              {companies.map((company) => (
+                <MenuItem key={company} value={company}>
+                  {company}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <Button
             type="submit"
             variant="contained"
@@ -112,7 +135,7 @@ export default function NoteForm({ open, handleClose, editNote = null }) {
             fullWidth
             sx={{ mt: 2 }}
           >
-            {editNote ? '更新' : '新增'}
+            {editCase ? '更新' : '新增'}
           </Button>
         </Box>
       </Box>
@@ -123,10 +146,10 @@ export default function NoteForm({ open, handleClose, editNote = null }) {
 NoteForm.propTypes = {
   open: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
-  editNote: PropTypes.shape({
+  editCase: PropTypes.shape({
     id: PropTypes.string,
-    title: PropTypes.string,
-    content: PropTypes.string,
+    caseNumber: PropTypes.string,
+    caseCompany: PropTypes.string,
     createdAt: PropTypes.string,
   }),
 };

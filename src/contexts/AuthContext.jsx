@@ -1,6 +1,5 @@
-/* eslint-disable react-refresh/only-export-components */
-/* eslint-disable react/prop-types */
 import  { createContext, useState, useContext, useEffect } from 'react';
+import PropTypes from 'prop-types';
 import { auth } from '../firebase/config';
 import {
   createUserWithEmailAndPassword,
@@ -53,3 +52,7 @@ export function AuthProvider({ children }) {
     </AuthContext.Provider>
   );
 }
+
+AuthProvider.propTypes = {
+  children: PropTypes.node.isRequired,
+};

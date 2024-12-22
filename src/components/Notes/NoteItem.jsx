@@ -17,14 +17,14 @@ import SaveIcon from '@mui/icons-material/Save';
 
 export default function NoteItem({ note }) {
   const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(note.title);
-  const [editContent, setEditContent] = useState(note.content);
+  const [editCaseNumber, setEditCaseNumber] = useState(note.caseNumber);
+  const [editCaseCompany, setEditCaseCompany] = useState(note.caseCompany);
   const { currentUser } = useAuth();
 
   const handleDelete = async () => {
     try {
       await deleteDoc(
-        doc(db, `users/${currentUser.uid}/notes/${note.id}`)
+        doc(db, `users/${currentUser.uid}/cases/${note.id}`)
       );
     } catch (error) {
       console.error('刪除筆記失敗:', error);
@@ -34,10 +34,10 @@ export default function NoteItem({ note }) {
   const handleUpdate = async () => {
     try {
       await updateDoc(
-        doc(db, `users/${currentUser.uid}/notes/${note.id}`),
+        doc(db, `users/${currentUser.uid}/cases/${note.id}`),
         {
-          title: editTitle,
-          content: editContent,
+          caseNumber: editCaseNumber,
+          caseCompany: editCaseCompany,
         }
       );
       setIsEditing(false);
@@ -53,16 +53,16 @@ export default function NoteItem({ note }) {
           <Box>
             <TextField
               fullWidth
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
+              value={editCaseNumber}
+              onChange={(e) => setEditCaseNumber(e.target.value)}
               margin="normal"
             />
             <TextField
               fullWidth
               multiline
               rows={4}
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
+              value={editCaseCompany}
+              onChange={(e) => setEditCaseCompany(e.target.value)}
               margin="normal"
             />
             <IconButton onClick={handleUpdate}>
@@ -71,8 +71,8 @@ export default function NoteItem({ note }) {
           </Box>
         ) : (
           <>
-            <Typography variant="h6">{note.title}</Typography>
-            <Typography variant="body2">{note.content}</Typography>
+            <Typography variant="h6">{note.caseNumber}</Typography>
+            <Typography variant="body2">{note.caseCompany}</Typography>
             <Box sx={{ mt: 2 }}>
               <IconButton onClick={() => setIsEditing(true)}>
                 <EditIcon />
@@ -91,8 +91,8 @@ export default function NoteItem({ note }) {
 NoteItem.propTypes = {
   note: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    title: PropTypes.string.isRequired,
-    content: PropTypes.string.isRequired,
+    caseNumber: PropTypes.string.isRequired,
+    caseCompany: PropTypes.string.isRequired,
     createdAt: PropTypes.string.isRequired,
   }).isRequired,
   onEdit: PropTypes.func.isRequired,

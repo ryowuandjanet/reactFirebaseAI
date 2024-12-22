@@ -23,64 +23,64 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { doc, deleteDoc } from 'firebase/firestore';
 
 export default function NoteList() {
-  const [notes, setNotes] = useState([]);
-  const [editNote, setEditNote] = useState(null);
+  const [cases, setCases] = useState([]);
+  const [editCase, setEditCase] = useState(null);
   const [openModal, setOpenModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [noteToDelete, setNoteToDelete] = useState(null);
+  const [caseToDelete, setCaseToDelete] = useState(null);
   const { currentUser } = useAuth();
 
   const handleClose = () => {
     setOpenModal(false);
-    setEditNote(null);
+    setEditCase(null);
   };
 
-  const handleEdit = (note) => {
-    setEditNote(note);
+  const handleEdit = (caseItem) => {
+    setEditCase(caseItem);
     setOpenModal(true);
   };
 
-  const handleDeleteClick = (note) => {
-    setNoteToDelete(note);
+  const handleDeleteClick = (caseItem) => {
+    setCaseToDelete(caseItem);
     setDeleteDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
-    if (noteToDelete) {
+    if (caseToDelete) {
       try {
-        await deleteDoc(doc(db, `users/${currentUser.uid}/notes/${noteToDelete.id}`));
+        await deleteDoc(doc(db, `users/${currentUser.uid}/cases/${caseToDelete.id}`));
         setDeleteDialogOpen(false);
-        setNoteToDelete(null);
+        setCaseToDelete(null);
       } catch (error) {
-        console.error('刪除筆記失敗:', error);
+        console.error('刪除案件失敗:', error);
       }
     }
   };
 
   const handleDeleteCancel = () => {
     setDeleteDialogOpen(false);
-    setNoteToDelete(null);
+    setCaseToDelete(null);
   };
 
   useEffect(() => {
     if (!currentUser) return;
 
     const q = query(
-      collection(db, `users/${currentUser.uid}/notes`),
+      collection(db, `users/${currentUser.uid}/cases`),
       orderBy('createdAt', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const notesData = [];
+      const casesData = [];
       querySnapshot.forEach((doc) => {
-        notesData.push({ 
+        casesData.push({ 
           id: doc.id, 
           ...doc.data(),
           createdAt: new Date(doc.data().createdAt).toLocaleString()
         });
       });
-      setNotes(notesData);
+      setCases(casesData);
     });
 
     return () => unsubscribe();
@@ -88,14 +88,14 @@ export default function NoteList() {
 
   const columns = [
     { 
-      field: 'title', 
-      headerName: '標題', 
+      field: 'caseNumber', 
+      headerName: '案號', 
       flex: 1,
       minWidth: 150 
     },
     { 
-      field: 'content', 
-      headerName: '內容', 
+      field: 'caseCompany', 
+      headerName: '所屬公司', 
       flex: 2,
       minWidth: 200,
       renderCell: (params) => (
@@ -145,9 +145,9 @@ export default function NoteList() {
     }
   ];
 
-  const filteredNotes = notes.filter(note => 
-    note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredCases = cases.filter(caseItem => 
+    caseItem.caseNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    caseItem.caseCompany.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -155,7 +155,7 @@ export default function NoteList() {
       <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
         <TextField
           size="small"
-          placeholder="搜尋筆記..."
+          placeholder="搜尋案件..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
@@ -171,14 +171,14 @@ export default function NoteList() {
           startIcon={<AddIcon />}
           onClick={() => setOpenModal(true)}
         >
-          新增筆記
+          新增案件
         </Button>
       </Box>
       
       <NoteForm 
         open={openModal}
         handleClose={handleClose}
-        editNote={editNote}
+        editCase={editCase}
       />
 
       <Dialog
@@ -192,7 +192,7 @@ export default function NoteList() {
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
-            確定要刪除這個筆記嗎？此操作無法復原。
+            確定要刪除這個案件嗎？此操作無法復原。
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -205,7 +205,7 @@ export default function NoteList() {
 
       <div style={{ height: 600, width: '100%' }}>
         <DataGrid
-          rows={filteredNotes}
+          rows={filteredCases}
           columns={columns}
           initialState={{
             pagination: {
